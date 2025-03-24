@@ -36,6 +36,8 @@ def process_filename(filename):
 def process_folders(main_folder, update_folder):
     output_file = os.path.join(main_folder, "processed_mods.txt")
     mod_versions = {}
+    mods_updated = 0
+    mods_new = 0
 
     # Process main folder
     for filename in os.listdir(main_folder):
@@ -53,13 +55,16 @@ def process_folders(main_folder, update_folder):
 
             if name in mod_versions and mod_versions[name] != new_version:
                 f.write(f"{name}: {mod_versions[name]} -> {new_version}\n")  # Version changed
+                mods_updated += 1
             else:
                 f.write(f"{name}: {new_version} new\n")  # New mod or same version
+                mods_new += 1
 
         # Write remaining mods from the main folder that weren't updated
         for name, version in mod_versions.items():
             if name not in [process_filename(f)[0] for f in os.listdir(update_folder) if f.endswith(".jar")]:
                 f.write(f"{name}: {version}\n")
+        f.write(f"\nMods Updated: {mods_updated} New Mods: {mods_new}")
 
     print(f"Processed filenames saved to {output_file}")
 
