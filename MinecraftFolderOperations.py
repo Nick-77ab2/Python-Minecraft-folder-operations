@@ -136,19 +136,24 @@ if __name__ == "__main__":
             "1. Compare folders and update the version update file.\n"
             "2. Delete duplicate mods in the update folder.\n"
             "3. Find clientside and serverside-only files.\n"
+            "4. Exit.\n"
         )
 
-        if check_process not in {"1", "2", "3"}:
+        if check_process not in {"1", "2", "3", "4"}:
+            print("Press a number between 1 and 4 please.\n")
             check_process = "0"
                 
-    if check_process == "1":
-        folder1 = input("Enter the main folder path: ")
-        folder2 = input("Enter the updates folder path: ")
-        process_folders(folder1, folder2)
-    elif check_process == "2":
-        folder = input("Enter the folder path: ")
-        delete_duplicate_mods(folder)
-    elif check_process == "3":
-        folder1 = input("Enter the client folder path: ")
-        folder2 = input("Enter the server folder path: ")
-        get_differences(folder1, folder2)
+        if check_process == "1":
+            folder1 = input("Enter the main folder path: ")
+            folder2 = input("Enter the updates folder path: ")
+            process_folders(folder1, folder2)
+        elif check_process == "2":
+            folder = input("Enter the folder path: ")
+            delete_duplicate_mods(folder)
+        elif check_process == "3":
+            folder1 = input("Enter the client folder path: ")
+            folder2 = input("Enter the server folder path: ")
+            get_differences(folder1, folder2)
+        elif check_process == "4":
+            print("Exiting...")
+            break
