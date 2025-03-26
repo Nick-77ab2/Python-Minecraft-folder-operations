@@ -152,13 +152,16 @@ if __name__ == "__main__":
             folder1 = input("Enter the main folder path: ")
             folder2 = input("Enter the updates folder path: ")
             process_folders(folder1, folder2)
+            check_process = "0"
         elif check_process == "2":
             folder = input("Enter the folder path: ")
             delete_duplicate_mods(folder)
+            check_process = "0"
         elif check_process == "3":
             folder1 = input("Enter the client folder path: ")
             folder2 = input("Enter the server folder path: ")
             get_differences(folder1, folder2)
+            check_process = "0"
         elif check_process == "4":
             print("Exiting...")
             break
