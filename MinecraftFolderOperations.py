@@ -144,6 +144,11 @@ def remove_wrong_versions(folder, minecraft_version):
     mods_cleaned = 0
     major, minor = map(int, minecraft_version.split("."))  # Split into major and minor parts
     previous_minecraft_version = f"{major}.{minor - 1}"  # Decrease minor version
+    allowed_minecraft_versions = [
+    r"1\.7\.10", r"1\.12\.[1-9]", r"1\.16\.[1-9]",
+    r"1\.19\.[1-9]", r"1\.20\.[1-9]", r"1\.21\.[1-9]"
+    ]
+    allowed_versions_pattern = rf"(?<=\d)(?:mc_?|mc-?|\+)?(?:{'|'.join(allowed_minecraft_versions)})(?=$|[-_.+])|(?:^|[-_.+])(?:mc_?|mc-?|\+)?(?:{'|'.join(allowed_minecraft_versions)})(?=$|[-_.+])"
     for filename in os.listdir(folder):
         cleaned = cleanup(filename)
         # Check if the file contains the Minecraft version before modifying it
@@ -156,7 +161,11 @@ def remove_wrong_versions(folder, minecraft_version):
                 cleaned, 
                 flags=re.IGNORECASE)
         else:
-            # If the Minecraft version isn't found delete the file
+            # If the Minecraft version isn't found and they don't have one delete the file
+            #print("cleaned file: " + cleaned + "\n") this was debug
+            has_minecraft_version = re.search(allowed_versions_pattern, cleaned, flags=re.IGNORECASE)
+            if not has_minecraft_version:
+                continue
             file_path = os.path.join(folder, filename)
             os.remove(file_path)  # Delete the file
             mods_cleaned +=1
