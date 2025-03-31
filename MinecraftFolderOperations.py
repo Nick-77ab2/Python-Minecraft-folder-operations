@@ -2,12 +2,21 @@ import os
 import re
 
 
-def process_filename(filename):
+def cleanup(filename):
     # Remove unwanted characters and substrings
     cleaned = re.sub(r"[\[\]()]", "", filename)  # Remove brackets and parentheses, but not '+'
     cleaned = re.sub(r"\.jar$", "", cleaned)  # Remove .jar extension
     cleaned = re.sub(r"(neoforge|fabric)", "", cleaned, flags=re.IGNORECASE)  # Remove unwanted terms
-    cleaned = re.sub(r"(?<=\d)(?:mc_?|mc-?|\+)?1\.21(?:\.1|\.X)?(?=$|[-_.+])|(?:^|[-_.+])(?:mc_?|mc-?|\+)?1\.21(?:\.1|\.X)?(?=$|[-_.+])", "", cleaned, flags=re.IGNORECASE)  # Remove Minecraft version references
+    return cleaned
+
+def process_filename(filename, minecraft_version):
+    cleaned = cleanup(filename)
+    major, minor = map(int, minecraft_version.split("."))  # Split into major and minor parts
+    previous_minecraft_version = f"{major}.{minor - 1}"  # Decrease minor version
+    cleaned = re.sub(rf"(?<=\d)(?:mc_?|mc-?|\+)?(?:{previous_minecraft_version}\.[1-9]-)?{minecraft_version}(?:\.1|\.X|x)?(?=$|[-_.+])|(?:^|[-_.+])(?:mc_?|mc-?|\+)?(?:{previous_minecraft_version}\.[1-9]-)?{minecraft_version}(?:\.1|\.X|x)?(?=$|[-_.+])", "",
+    cleaned, 
+    flags=re.IGNORECASE)  # Remove Minecraft version references, including 1.20.*- before the current version
+    #cleaned = re.sub(rf"(?<=\d)(?:mc_?|mc-?|\+)?{minecraft_version}(?:\.1|\.X)?(?=$|[-_.+])|(?:^|[-_.+])(?:mc_?|mc-?|\+)?{minecraft_version}(?:\.1|\.X)?(?=$|[-_.+])", "", cleaned, flags=re.IGNORECASE)  # Remove Minecraft version references
     cleaned = re.sub(r"\+", "", cleaned)  # Now remove '+' characters
 
     # Find potential split points
@@ -33,7 +42,7 @@ def process_filename(filename):
     return name_part, version_part
 
 
-def process_folders(main_folder, update_folder):
+def process_folders(main_folder, update_folder, minecraft_version):
     output_file = os.path.join(main_folder, "processed_mods.txt")
     mod_versions = {}
     mods_updated = 0
@@ -43,7 +52,7 @@ def process_folders(main_folder, update_folder):
     for filename in os.listdir(main_folder):
         if not filename.endswith(".jar"):  # Ignore non-.jar files
             continue
-        name, version = process_filename(filename)
+        name, version = process_filename(filename, minecraft_version)
         mod_versions[name] = version  # Store version from main folder
 
     with open(output_file, "w") as f:
@@ -51,7 +60,7 @@ def process_folders(main_folder, update_folder):
         for filename in os.listdir(update_folder):
             if not filename.endswith(".jar"):  # Ignore non-.jar files
                 continue
-            name, new_version = process_filename(filename)
+            name, new_version = process_filename(filename, minecraft_version) #process the update folder with delete as an option in case the user didn't check the update folder previously
 
             if name in mod_versions and mod_versions[name] != new_version:
                 f.write(f"{name}: {mod_versions[name]} -> {new_version}\n")  # Version changed
@@ -62,11 +71,11 @@ def process_folders(main_folder, update_folder):
 
         # Write remaining mods from the main folder that weren't updated
         for name, version in mod_versions.items():
-            if name not in [process_filename(f)[0] for f in os.listdir(update_folder) if f.endswith(".jar")]:
+            if name not in [process_filename(f, minecraft_version)[0] for f in os.listdir(update_folder) if f.endswith(".jar")]:
                 f.write(f"{name}: {version}\n")
         f.write(f"\nMods Updated: {mods_updated} New Mods: {mods_new}")
 
-    print(f"Processed filenames saved to {output_file}")
+    print(f"Processed filenames saved to {output_file}\n")
 
 def compare_versions(v1, v2):
     """Compares two version strings and returns:
@@ -79,7 +88,7 @@ def compare_versions(v1, v2):
     
     return (v1_parts > v2_parts) - (v1_parts < v2_parts)
 
-def delete_duplicate_mods(folder):
+def delete_duplicate_mods(folder, minecraft_version):
     mod_files = {}
     mods_removed = []
 
@@ -87,7 +96,7 @@ def delete_duplicate_mods(folder):
         if not filename.endswith(".jar"):  # Ignore non-.jar files
             continue
 
-        name, version = process_filename(filename)
+        name, version = process_filename(filename, minecraft_version)
         file_path = os.path.join(folder, filename)
 
         if name in mod_files:
@@ -104,16 +113,16 @@ def delete_duplicate_mods(folder):
             mod_files[name] = (version, file_path)  # Store name-version mapping
     for mod in mods_removed:
         print(f"Removed duplicate mod: {mod}")
-    print("Duplicate mods removed, keeping only the highest versions.")
+    print("Duplicate mods removed, keeping only the highest versions.\n")
 
 def cleanup_names_given_list(files):
     newFiles=[]
     for filename in files:
-        name, version = process_filename(filename)
+        name, version = process_filename(filename, minecraft_version)
         newFiles.append(f"{name}: {version}")
     return newFiles
 
-def get_differences(folder1, folder2):
+def get_differences(folder1, folder2, minecraft_version):
     output_file = os.path.join(folder1, "client_and_serverside_mods.txt")
     clientside_files = [f for f in os.listdir(folder1) if f.endswith(".jar")]
     serverside_files = [f for f in os.listdir(folder2) if f.endswith(".jar")]
@@ -122,46 +131,98 @@ def get_differences(folder1, folder2):
     serverside_only = [f for f in serverside_files if f not in clientside_files]
     with open(output_file, "w") as f:
         f.write("Clientside only files:\n")
-        clientside_only = cleanup_names_given_list(clientside_only)
+        clientside_only = cleanup_names_given_list(clientside_only, minecraft_version)
         f.write("\n".join(clientside_only))
         f.write("\n")
         f.write("\nServerside only files:\n")
-        serverside_only = cleanup_names_given_list(serverside_only)
+        serverside_only = cleanup_names_given_list(serverside_only, minecraft_version)
         f.write("\n".join(serverside_only))
     print(f"Clientside only files: {clientside_only}")
     print(f"Serverside only files: {serverside_only}")
 
-    
+def remove_wrong_versions(folder, minecraft_version):
+    mods_cleaned = 0
+    major, minor = map(int, minecraft_version.split("."))  # Split into major and minor parts
+    previous_minecraft_version = f"{major}.{minor - 1}"  # Decrease minor version
+    for filename in os.listdir(folder):
+        cleaned = cleanup(filename)
+        # Check if the file contains the Minecraft version before modifying it
+        if re.search(rf"(?<=\d)(?:mc_?|mc-?|\+)?(?:{previous_minecraft_version}\.[1-9]-)?{minecraft_version}(?:\.1|\.X|x)?(?=$|[-_.+])|(?:^|[-_.+])(?:mc_?|mc-?|\+)?(?:{previous_minecraft_version}\.[1-9]-)?{minecraft_version}(?:\.1|\.X|x)?(?=$|[-_.+])",
+    cleaned, 
+    flags=re.IGNORECASE):
+            # Remove Minecraft version references
+            cleaned = re.sub(
+                rf"(?<=\d)(?:mc_?|mc-?|\+)?(?:{previous_minecraft_version}\.[1-9]-)?{minecraft_version}(?:\.1|\.X|x)?(?=$|[-_.+])|(?:^|[-_.+])(?:mc_?|mc-?|\+)?(?:{previous_minecraft_version}\.[1-9]-)?{minecraft_version}(?:\.1|\.X|x)?(?=$|[-_.+])", "",
+                cleaned, 
+                flags=re.IGNORECASE)
+        else:
+            # If the Minecraft version isn't found delete the file
+            file_path = os.path.join(folder, filename)
+            os.remove(file_path)  # Delete the file
+            mods_cleaned +=1
+            print("Deleting %s because it's not the right version" % filename)
+    print(f"{mods_cleaned} mods removed.\n")
+    return
 
 if __name__ == "__main__":
     check_process = "0"
+    check_minecraft = "0"
+    print("Welcome to the Minecraft mod manager!")
+    while check_minecraft == "0":
+        check_minecraft = input(
+            "Please select a minecraft version:\n"
+            "1. 1.21.X\n"
+            "2. 1.20.X\n"
+            "3. 1.19.X\n"
+            "4. 1.12.X\n"
+            "5. 1.7.10\n"
+        )
+        if check_minecraft not in {"1", "2", "3", "4", "5"}:
+            print("Press a number between 1 and 5 please.\n")
+            check_minecraft = "0"
+        if check_minecraft == "1":
+            minecraft_version = "1.21"
+        elif check_minecraft == "2":
+            minecraft_version = "1.20"
+        elif check_minecraft == "3":
+            minecraft_version = "1.19"
+        elif check_minecraft == "4":
+            minecraft_version = "1.12"
+        elif check_minecraft == "5":
+            minecraft_version = "1.7.10"
+    
     while check_process == "0":
         check_process = input(
             "Select an option:\n"
-            "1. Compare folders and update the version update file.\n"
+            "1. Check update mods for incorrect minecraft versions.\n"
             "2. Delete duplicate mods in the update folder.\n"
-            "3. Find clientside and serverside-only files.\n"
-            "4. Exit.\n"
+            "3. Compare folders and update the version update file.\n"
+            "4. Find clientside and serverside-only files.\n"
+            "5. Exit.\n"
         )
 
-        if check_process not in {"1", "2", "3", "4"}:
-            print("Press a number between 1 and 4 please.\n")
+        if check_process not in {"1", "2", "3", "4", "5"}:
+            print("Press a number between 1 and 5 please.\n")
             check_process = "0"
                 
         if check_process == "1":
-            folder1 = input("Enter the main folder path: ")
-            folder2 = input("Enter the updates folder path: ")
-            process_folders(folder1, folder2)
+            folder = input("Enter the folder path: ")
+            remove_wrong_versions(folder, minecraft_version)
             check_process = "0"
         elif check_process == "2":
             folder = input("Enter the folder path: ")
-            delete_duplicate_mods(folder)
+            delete_duplicate_mods(folder, minecraft_version)
             check_process = "0"
         elif check_process == "3":
-            folder1 = input("Enter the client folder path: ")
-            folder2 = input("Enter the server folder path: ")
-            get_differences(folder1, folder2)
+            folder1 = input("Enter the main folder path: ")
+            folder2 = input("Enter the updates folder path: ")
+            process_folders(folder1, folder2, minecraft_version)
             check_process = "0"
         elif check_process == "4":
+            folder1 = input("Enter the client folder path: ")
+            folder2 = input("Enter the server folder path: ")
+            get_differences(folder1, folder2, minecraft_version)
+            check_process = "0"
+        elif check_process == "5":
             print("Exiting...")
             break
