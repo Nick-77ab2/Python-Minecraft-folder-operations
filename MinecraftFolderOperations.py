@@ -51,7 +51,7 @@ def process_folders(main_folder, update_folder, minecraft_version):
         if not filename.endswith(".jar"):  # Ignore non-.jar files
             continue
         name, version = process_filename(filename, minecraft_version)
-        mod_versions[name] = version  # Store version from main folder
+        mod_versions[name.lower()] = version  # Store version from main folder (keyed by lowercase name)
 
     with open(output_file, "w") as f:
         # Process update folder
@@ -62,13 +62,15 @@ def process_folders(main_folder, update_folder, minecraft_version):
             name, new_version = process_filename(filename, minecraft_version)
 
             # Find the actual key in `mod_versions` that matches `name.lower()`
-            matching_key = next((key for key in mod_versions if key.lower() == name.lower()), None)
+            matching_key = next((key for key in mod_versions if key == name.lower()), None)
 
             if matching_key and mod_versions[matching_key] != new_version:
                 f.write(f"{matching_key}: {mod_versions[matching_key]} -> {new_version}\n")  # Version changed
                 mods_updated += 1
+            elif matching_key:  # Mod exists with the same version
+                continue  # No need to count as a new mod
             else:
-                f.write(f"{name}: {new_version} new\n")  # New mod or same version
+                f.write(f"{name}: {new_version} new\n")  # New mod
                 mods_new += 1
 
         # Write remaining mods from the main folder that weren't updated
@@ -80,8 +82,8 @@ def process_folders(main_folder, update_folder, minecraft_version):
 
         f.write(f"\nMods Updated: {mods_updated} New Mods: {mods_new}")
 
-
     print(f"Processed filenames saved to {output_file}\n")
+
 
 def compare_versions(v1, v2):
     """Compares two version strings and returns:
