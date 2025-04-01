@@ -13,9 +13,7 @@ def process_filename(filename, minecraft_version):
     cleaned = cleanup(filename)
     major, minor = map(int, minecraft_version.split("."))  # Split into major and minor parts
     previous_minecraft_version = f"{major}.{minor - 1}"  # Decrease minor version
-    cleaned = re.sub(rf"(?<=\d)(?:mc_?|mc-?|\+)?(?:{previous_minecraft_version}\.[1-9]-)?{minecraft_version}(?:\.1|\.X|x)?(?=$|[-_.+])|(?:^|[-_.+])(?:mc_?|mc-?|\+)?(?:{previous_minecraft_version}\.[1-9]-)?{minecraft_version}(?:\.1|\.X|x)?(?=$|[-_.+])", "",
-    cleaned, 
-    flags=re.IGNORECASE)  # Remove Minecraft version references, including 1.20.*- before the current version
+    cleaned = re.sub(rf"(?<=\d)(?:mc_?|mc-?|\+)?(?:{previous_minecraft_version}\.[1-9]-)?(?:{minecraft_version})(?:\.[1-9]+|\.X|x)?(?=$|[-_.+])|(?:^|[-_+])(?:mc_?|mc-?|\+)?(?:{previous_minecraft_version}\.[1-9]-)?(?:{minecraft_version})(?:\.[1-9]+|\.X|x)?(?=$|[-_.+])", "", cleaned, flags=re.IGNORECASE)
     #cleaned = re.sub(rf"(?<=\d)(?:mc_?|mc-?|\+)?{minecraft_version}(?:\.1|\.X)?(?=$|[-_.+])|(?:^|[-_.+])(?:mc_?|mc-?|\+)?{minecraft_version}(?:\.1|\.X)?(?=$|[-_.+])", "", cleaned, flags=re.IGNORECASE)  # Remove Minecraft version references
     cleaned = re.sub(r"\+", "", cleaned)  # Now remove '+' characters
 
@@ -156,18 +154,14 @@ def remove_wrong_versions(folder, minecraft_version):
     r"1\.7\.10", r"1\.12\.[1-9]", r"1\.16\.[1-9]",
     r"1\.19\.[1-9]", r"1\.20\.[1-9]", r"1\.21\.[1-9]"
     ]
-    allowed_versions_pattern = rf"(?<=\d)(?:mc_?|mc-?|\+)?(?:{'|'.join(allowed_minecraft_versions)})(?=$|[-_.+])|(?:^|[-_.+])(?:mc_?|mc-?|\+)?(?:{'|'.join(allowed_minecraft_versions)})(?=$|[-_.+])"
+    allowed_versions_pattern = rf"(?<=\d)(?:mc_?|mc-?|\+)?(?:{'|'.join(allowed_minecraft_versions)})(?=$|[-_.+])|(?:^|[-_+])(?:mc_?|mc-?|\+)?(?:{'|'.join(allowed_minecraft_versions)})(?=$|[-_.+])"
     for filename in os.listdir(folder):
         cleaned = cleanup(filename)
         # Check if the file contains the Minecraft version before modifying it
-        if re.search(rf"(?<=\d)(?:mc_?|mc-?|\+)?(?:{previous_minecraft_version}\.[1-9]-)?{minecraft_version}(?:\.1|\.X|x)?(?=$|[-_.+])|(?:^|[-_.+])(?:mc_?|mc-?|\+)?(?:{previous_minecraft_version}\.[1-9]-)?{minecraft_version}(?:\.1|\.X|x)?(?=$|[-_.+])",
-    cleaned, 
-    flags=re.IGNORECASE):
+        if re.sub(rf"(?<=\d)(?:mc_?|mc-?|\+)?(?:{previous_minecraft_version}\.[1-9]-)?(?:{minecraft_version})(?:\.[1-9]+|\.X|x)?(?=$|[-_.+])|(?:^|[-_+])(?:mc_?|mc-?|\+)?(?:{previous_minecraft_version}\.[1-9]-)?(?:{minecraft_version})(?:\.[1-9]+|\.X|x)?(?=$|[-_.+])", "", cleaned, flags=re.IGNORECASE):
             # Remove Minecraft version references
-            cleaned = re.sub(
-                rf"(?<=\d)(?:mc_?|mc-?|\+)?(?:{previous_minecraft_version}\.[1-9]-)?{minecraft_version}(?:\.1|\.X|x)?(?=$|[-_.+])|(?:^|[-_.+])(?:mc_?|mc-?|\+)?(?:{previous_minecraft_version}\.[1-9]-)?{minecraft_version}(?:\.1|\.X|x)?(?=$|[-_.+])", "",
-                cleaned, 
-                flags=re.IGNORECASE)
+            cleaned = re.sub(rf"(?<=\d)(?:mc_?|mc-?|\+)?(?:{previous_minecraft_version}\.[1-9]-)?(?:{minecraft_version})(?:\.[1-9]+|\.X|x)?(?=$|[-_.+])|(?:^|[-_+])(?:mc_?|mc-?|\+)?(?:{previous_minecraft_version}\.[1-9]-)?(?:{minecraft_version})(?:\.[1-9]+|\.X|x)?(?=$|[-_.+])", "", cleaned, flags=re.IGNORECASE)
+
         else:
             # If the Minecraft version isn't found and they don't have one delete the file
             #print("cleaned file: " + cleaned + "\n") this was debug
