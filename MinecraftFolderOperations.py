@@ -60,20 +60,28 @@ def process_folders(main_folder, update_folder, minecraft_version):
         for filename in os.listdir(update_folder):
             if not filename.endswith(".jar"):  # Ignore non-.jar files
                 continue
-            name, new_version = process_filename(filename, minecraft_version) #process the update folder with delete as an option in case the user didn't check the update folder previously
 
-            if name in mod_versions and mod_versions[name] != new_version:
-                f.write(f"{name}: {mod_versions[name]} -> {new_version}\n")  # Version changed
+            name, new_version = process_filename(filename, minecraft_version)
+
+            # Find the actual key in `mod_versions` that matches `name.lower()`
+            matching_key = next((key for key in mod_versions if key.lower() == name.lower()), None)
+
+            if matching_key and mod_versions[matching_key] != new_version:
+                f.write(f"{matching_key}: {mod_versions[matching_key]} -> {new_version}\n")  # Version changed
                 mods_updated += 1
             else:
                 f.write(f"{name}: {new_version} new\n")  # New mod or same version
                 mods_new += 1
 
         # Write remaining mods from the main folder that weren't updated
+        existing_mods = {process_filename(f, minecraft_version)[0].lower() for f in os.listdir(update_folder) if f.endswith(".jar")}
+        
         for name, version in mod_versions.items():
-            if name not in [process_filename(f, minecraft_version)[0] for f in os.listdir(update_folder) if f.endswith(".jar")]:
+            if name.lower() not in existing_mods:
                 f.write(f"{name}: {version}\n")
+
         f.write(f"\nMods Updated: {mods_updated} New Mods: {mods_new}")
+
 
     print(f"Processed filenames saved to {output_file}\n")
 
