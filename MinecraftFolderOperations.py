@@ -123,7 +123,7 @@ def delete_duplicate_mods(folder, minecraft_version):
         print(f"Removed duplicate mod: {mod}")
     print("Duplicate mods removed, keeping only the highest versions.\n")
 
-def cleanup_names_given_list(files):
+def cleanup_names_given_list(files, minecraft_version):
     newFiles=[]
     for filename in files:
         name, version = process_filename(filename, minecraft_version)
@@ -145,8 +145,9 @@ def get_differences(folder1, folder2, minecraft_version):
         f.write("\nServerside only files:\n")
         serverside_only = cleanup_names_given_list(serverside_only, minecraft_version)
         f.write("\n".join(serverside_only))
-    print(f"Clientside only files: {clientside_only}")
-    print(f"Serverside only files: {serverside_only}")
+    print(f"Clientside only files: {clientside_only}\n")
+    print(f"Serverside only files: {serverside_only}\n")
+    print("Client and serverside files saved to file: client_and_serverside_mods.txt in the client folder given\n")
 
 def remove_wrong_versions(folder, minecraft_version):
     mods_cleaned = 0
