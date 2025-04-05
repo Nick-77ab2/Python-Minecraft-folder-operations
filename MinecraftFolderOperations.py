@@ -6,7 +6,7 @@ def cleanup(filename):
     # Remove unwanted characters and substrings
     cleaned = re.sub(r"[\[\]()]", "", filename)  # Remove brackets and parentheses, but not '+'
     cleaned = re.sub(r"\.jar$", "", cleaned)  # Remove .jar extension
-    cleaned = re.sub(r"(neoforge|fabric)", "", cleaned, flags=re.IGNORECASE)  # Remove unwanted terms
+    cleaned = re.sub(r"(neo|neoforge|fabric)", "", cleaned, flags=re.IGNORECASE)  # Remove unwanted terms
     return cleaned
 
 def process_filename(filename, minecraft_version):
