@@ -6,7 +6,8 @@ def cleanup(filename):
     # Remove unwanted characters and substrings
     cleaned = re.sub(r"[\[\]()]", "", filename)  # Remove brackets and parentheses, but not '+'
     cleaned = re.sub(r"\.jar$", "", cleaned)  # Remove .jar extension
-    cleaned = re.sub(r"(neo|neoforge|fabric)", "", cleaned, flags=re.IGNORECASE)  # Remove unwanted terms
+    cleaned = re.sub (r"[0-3][0-9].[0-1][0-9].2025", "", cleaned) #remove dates from 2025
+    cleaned = re.sub(r"(neoforge|neo|fabric)", "", cleaned, flags=re.IGNORECASE)  # Remove unwanted terms
     return cleaned
 
 def process_filename(filename, minecraft_version):
@@ -18,10 +19,10 @@ def process_filename(filename, minecraft_version):
     cleaned = re.sub(r"\+", "", cleaned)  # Now remove '+' characters
 
     # Find potential split points
-    split_matches = list(re.finditer(r"(?<=\d)[-_v]|[-_v](?=\d)|[-_]v(?=\d)", cleaned))
+    split_matches = list(re.finditer(r"(?<=[a-zA-Z])[-_](?=\d)|(?<=\d)[-_v.]|[-_v.](?=\d)|[-_]v.(?=\d)", cleaned))
 
     if not split_matches:
-        return cleaned + ": unknown"
+        return cleaned ,"unknown"
 
     # Find the most relevant split point
     best_split = max(split_matches, key=lambda m: len(re.findall(r"\d", cleaned[m.end():])))
